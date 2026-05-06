@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.module"
+    namespace = "com.example.clockfucker"
     compileSdk = 36 // Can be modified as needed
 
     defaultConfig {
-        applicationId = "com.example.module"
+        applicationId = "com.example.clockfucker"
         minSdk = 31
         versionCode = 1
         versionName = "1.0.0"

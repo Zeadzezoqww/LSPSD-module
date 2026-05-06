@@ -25,46 +25,46 @@ public class HideClock extends XposedModule {
 
         ClassLoader cl = param.getClassLoader();
 
-        String[] classes = {
-            "com.android.systemui.customization.clocks.DefaultClockFaceLayout",
-            "com.android.systemui.customization.clocks.view.DigitalClockTextView",
-            "com.android.systemui.clock.ui.viewmodel.ClockViewModel",
-            "com.android.keyguard.ClockEventController",
-            "com.android.systemui.keyguard.domain.interactor.KeyguardClockInteractor",
-        };
-
-        String[] methods = {
-            "onFinishInflate",
-            "onAttachedToWindow",
-            "onMeasure",
-            "onDraw",
-            "setVisibility",
-        };
-
-        for (String cls : classes) {
-            for (String method : methods) {
-                hookMethod(cl, cls, method);
+        // Hook DefaultClockFaceLayout - the main clock container
+        try {
+            Class<?> cls = cl.loadClass(
+                "com.android.systemui.customization.clocks.DefaultClockFaceLayout");
+            for (Method m : cls.getDeclaredMethods()) {
+                hook(m).intercept(chain -> {
+                    Object result = chain.proceed();
+                    Object thisObj = chain.getThisObject();
+                    if (thisObj instanceof View) {
+                        hideViewAndChildren((View) thisObj);
+                    }
+                    return result;
+                });
             }
-        }
+        } catch (Exception ignored) {}
+
+        // Also hook DigitalClockTextView
+        try {
+            Class<?> cls = cl.loadClass(
+                "com.android.systemui.customization.clocks.view.DigitalClockTextView");
+            for (Method m : cls.getDeclaredMethods()) {
+                hook(m).intercept(chain -> {
+                    Object thisObj = chain.getThisObject();
+                    if (thisObj instanceof View) {
+                        ((View) thisObj).setVisibility(View.GONE);
+                    }
+                    return null;
+                });
+            }
+        } catch (Exception ignored) {}
     }
 
-    private void hookMethod(ClassLoader cl, String className, String methodName) {
+    static void hideViewAndChildren(View view) {
         try {
-            Class<?> cls = cl.loadClass(className);
-            for (Method m : cls.getDeclaredMethods()) {
-                if (m.getName().equals(methodName)) {
-                    hook(m).intercept(chain -> {
-                        Object thisObj = chain.getThisObject();
-                        if (thisObj instanceof View) {
-                            View view = (View) thisObj;
-                            view.setVisibility(View.GONE);
-                            view.setAlpha(0f);
-                            ViewGroup parent = (ViewGroup) view.getParent();
-                            if (parent != null) parent.removeView(view);
-                            return null;
-                        }
-                        return chain.proceed();
-                    });
+            view.setVisibility(View.GONE);
+            view.setAlpha(0f);
+            if (view instanceof ViewGroup) {
+                ViewGroup group = (ViewGroup) view;
+                for (int i = 0; i < group.getChildCount(); i++) {
+                    hideViewAndChildren(group.getChildAt(i));
                 }
             }
         } catch (Exception ignored) {}
