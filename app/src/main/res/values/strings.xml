@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Clock Fucker</string>
+    <string name="xposed_description">Hides the lockscreen clock</string>
 </resources>
